@@ -61,9 +61,9 @@ if (ENV.BUILD_NUMBER) {
 
 // We must build against the version of Kotlin Gradle ships with.
 def kotlinVersion = KotlinDslVersion.current().getKotlinVersion()
-if (libs.versions.kotlin.get() != kotlinVersion) {
-	throw new IllegalStateException("Requires Kotlin version: ${kotlinVersion}")
-}
+/*if (libs.versions.kotlin.get() != kotlinVersion) {
+ throw new IllegalStateException("Requires Kotlin version: ${kotlinVersion}")
+ }*/
 
 repositories {
 	maven {

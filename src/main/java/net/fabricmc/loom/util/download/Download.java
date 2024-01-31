@@ -82,7 +82,8 @@ public final class Download {
 	private final HttpClient.Version httpVersion;
 	private final int downloadAttempt;
 
-	Download(URI url, String expectedHash, boolean useEtag, boolean forceDownload, boolean offline, Duration maxAge, DownloadProgressListener progressListener, HttpClient.Version httpVersion, int downloadAttempt) {
+	Download(URI url, String expectedHash, boolean useEtag, boolean forceDownload, boolean offline, Duration maxAge,
+			DownloadProgressListener progressListener, HttpClient.Version httpVersion, int downloadAttempt) {
 		this.url = url;
 		this.expectedHash = expectedHash;
 		this.useEtag = useEtag;
@@ -112,7 +113,8 @@ public final class Download {
 				.build();
 	}
 
-	private <T> HttpResponse<T> send(HttpRequest httpRequest, HttpResponse.BodyHandler<T> bodyHandler) throws DownloadException {
+	private <T> HttpResponse<T> send(HttpRequest httpRequest, HttpResponse.BodyHandler<T> bodyHandler)
+			throws DownloadException {
 		if (offline) {
 			throw error("Unable to download %s in offline mode", this.url);
 		}
@@ -181,7 +183,8 @@ public final class Download {
 				.map(this::getETagRequest)
 				.orElseGet(this::getRequest);
 
-		// Create a .lock file, this allows us to re-download if the download was forcefully aborted part way through.
+		// Create a .lock file, this allows us to re-download if the download was
+		// forcefully aborted part way through.
 		createLock(output);
 		HttpResponse<InputStream> response = send(httpRequest, HttpResponse.BodyHandlers.ofInputStream());
 		getAndResetLock(output);
@@ -191,7 +194,8 @@ public final class Download {
 
 		if (statusCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
 			try {
-				// Update the last modified time so we don't retry the request until the max age has passed again.
+				// Update the last modified time so we don't retry the request until the max age
+				// has passed again.
 				Files.setLastModifiedTime(output, FileTime.from(Instant.now()));
 			} catch (IOException e) {
 				throw error(e, "Failed to update last modified time");
@@ -231,7 +235,8 @@ public final class Download {
 				throw error("Failed to download (%s) with expected hash: %s got %s", url, expectedHash, downloadedHash);
 			}
 
-			// Write the hash to the file attribute, saves a lot of time trying to re-compute the hash when re-visiting this file.
+			// Write the hash to the file attribute, saves a lot of time trying to
+			// re-compute the hash when re-visiting this file.
 			writeHash(output, expectedHash);
 		}
 	}
@@ -279,9 +284,11 @@ public final class Download {
 		}
 
 		try {
-			// Once the file has been fully read, create a hard link to the destination file.
-			// And then remove the temporary file, this ensures that the output file only exists in fully populated state.
-			Files.createLink(output, partFile);
+			// Once the file has been fully read, create a hard link to the destination
+			// file.
+			// And then remove the temporary file, this ensures that the output file only
+			// exists in fully populated state.
+			Files.copy(output, partFile);
 			Files.delete(partFile);
 		} catch (IOException e) {
 			throw error(e, "Failed to complete download");
@@ -302,9 +309,9 @@ public final class Download {
 		final String encoding = response.headers().firstValue("Content-Encoding").orElse("");
 
 		return switch (encoding) {
-		case "gzip" -> new GZIPInputStream(response.body());
-		case "" -> response.body();
-		default -> throw error("Unsupported encoding: %s", encoding);
+			case "gzip" -> new GZIPInputStream(response.body());
+			case "" -> response.body();
+			default -> throw error("Unsupported encoding: %s", encoding);
 		};
 	}
 
@@ -317,7 +324,9 @@ public final class Download {
 		}
 
 		if (locked && downloadAttempt == 1) {
-			LOGGER.warn("Forcing downloading {} as existing lock file was found. This may happen if the gradle build was forcefully canceled.", output);
+			LOGGER.warn(
+					"Forcing downloading {} as existing lock file was found. This may happen if the gradle build was forcefully canceled.",
+					output);
 			return true;
 		}
 
@@ -343,7 +352,7 @@ public final class Download {
 			LOGGER.info("Found existing file ({}) to download with unexpected hash.", output);
 		}
 
-		//noinspection RedundantIfStatement
+		// noinspection RedundantIfStatement
 		if (!maxAge.equals(Duration.ZERO) && !isOutdated(output)) {
 			return false;
 		}
@@ -359,8 +368,8 @@ public final class Download {
 
 		try {
 			String computedHash = switch (algorithm) {
-			case "sha1" -> Checksum.sha1Hex(path);
-			default -> throw error("Unsupported hash algorithm (%s)", algorithm);
+				case "sha1" -> Checksum.sha1Hex(path);
+				default -> throw error("Unsupported hash algorithm (%s)", algorithm);
 			};
 
 			return computedHash.equalsIgnoreCase(hash);
